@@ -84,7 +84,6 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     skip_pool3 = tf.add(input_layer, conv_pool3)
 
     input_layer = tf.layers.conv2d_transpose(skip_pool3, num_classes, 16, strides=(8, 8),padding="same",
-                                             kernel_initializer=tf.random_normal_initializer(stddev=0.01),
                                              kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
 
@@ -138,6 +137,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
+    sess.run(tf.global_variables_initializer())
+
     for epochs in range(epochs):
         for image, label in get_batches_fn(batch_size):
             _, loss = sess.run([cross_entropy_loss, train_op],
