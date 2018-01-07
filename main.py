@@ -104,19 +104,22 @@ def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
+    # Reshaping inputs to be flatten
     logits = tf.reshape(nn_last_layer, (-1, num_classes))
+
+    labels = tf.reshape(correct_label, (-1, num_classes))
 
     reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
 
-    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=correct_label))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
 
-    cross_entropy_loss = cross_entropy_loss + sum(reg_losses)
+    cross_entropy_loss_total = cross_entropy_loss + sum(reg_losses)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-    train_op = optimizer.minimize(cross_entropy_loss)
+    train_op = optimizer.minimize(cross_entropy_loss_total)
 
-    return logits, train_op, cross_entropy_loss
+    return logits, train_op, cross_entropy_loss_total
 
 
 tests.test_optimize(optimize)
@@ -139,13 +142,14 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     """
     sess.run(tf.global_variables_initializer())
 
-    for epochs in range(epochs):
+    for epoch in range(epochs):
         for image, label in get_batches_fn(batch_size):
-            _, loss = sess.run([cross_entropy_loss, train_op],
+            loss, accuracy = sess.run([cross_entropy_loss, train_op],
                                feed_dict={input_image: image, correct_label: label,keep_prob: 0.5,
                                           learning_rate: 0.0009})
-            print("Loss: = {:.3f}".format(loss))
-    print("Training Completed...")
+            print('loss', loss)
+
+        #print("Epoch %d of %d: Training loss: %.4f" % (epoch + 1, epochs, loss))
 
 
 tests.test_train_nn(train_nn)
